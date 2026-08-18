@@ -1,0 +1,8 @@
+# Imported decks and everything derived from them stay local: they carry client
+# names, results and commercial terms, and have no business in version control.
+library/
+build/
+*.pdf
+*.pptx
+__pycache__/
+*.pyc
