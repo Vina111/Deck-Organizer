@@ -59,7 +59,7 @@ def build(sources, out_dir: Path, thumb_width: int = 480, log=print) -> dict:
                 "text": rec.text,
                 "text_hash": fingerprint.text_hash(rec.text),
                 "dhash": fingerprint.dhash(rec.png_path) if rec.png_path else 0,
-                "dup_cluster": "", "dup_decision": "",
+                "dup_cluster": "", "dup_decision": "", "title_confirmed": False,
                 "last_used": None, "use_count": 0,
             })
 
@@ -105,7 +105,7 @@ def apply_edits(index: dict, edits: dict) -> dict:
         page = by_uid.get(uid)
         if not page:
             continue
-        for field in ("title", "tags", "note", "dup_decision"):
+        for field in ("title", "tags", "note", "dup_decision", "title_confirmed"):
             if field in patch:
                 page[field] = patch[field]
         touched += 1

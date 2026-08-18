@@ -104,6 +104,13 @@ def cmd_compose(args) -> int:
         print("unknown page(s): %s" % ", ".join(missing), file=sys.stderr)
         return 2
 
+    dropped = [u for u in uids if by_uid[u].get("dup_decision") == "drop"]
+    if dropped:
+        # Say it rather than silently removing the page: the person picking
+        # pages may well know something the duplicate review did not.
+        print("注意：以下页在查重中被标记删除，仍会包含在内 —— %s"
+              % ", ".join(dropped), file=sys.stderr)
+
     refs = [(by_doc[by_uid[u]["doc"]], by_uid[u]["index"]) for u in uids]
     written = pdfdoc.compose(refs, Path(args.out),
                              title=args.title or Path(args.out).stem)

@@ -100,7 +100,7 @@ body.drawer-open .handle{left:var(--aside-w)}
 .brush{width:18px; height:18px; border-radius:5px; background:var(--sunk); color:var(--ink-3);
   font-size:10px; display:grid; place-items:center; flex:none}
 .brush:hover{background:var(--brush); color:#fff}
-body:not([data-mode="tag"]) .brush{display:none}
+body:not(.brushing) .brush{display:none}
 .tag[data-local-brush="1"]{border-color:var(--brush); background:var(--brush-soft)}
 .tag[data-local-brush="1"] .brush{background:var(--brush); color:#fff}
 .tag[data-local-filter="1"]{border-color:var(--accent); background:var(--accent-soft)}
@@ -121,6 +121,7 @@ body:not([data-mode="tag"]) .brush{display:none}
 .brushbar{display:none; align-items:center; gap:8px; font-size:12.5px; color:var(--brush);
   background:var(--brush-soft); border:1px solid var(--brush); border-radius:7px; padding:5px 11px}
 body[data-mode="tag"] .brushbar.on{display:flex}
+body:not([data-mode="tag"]) #brushtoggle{display:none}
 .brushbar b{font-weight:600}
 
 /* ---------- grid ---------- */
@@ -135,8 +136,16 @@ main{padding:14px 18px 40px}
   background:rgba(11,20,26,.78); color:#fff; padding:1px 6px; border-radius:4px}
 .flag{position:absolute; right:6px; top:6px; font-size:10px; padding:1px 6px; border-radius:4px;
   background:var(--warn); color:#fff; display:none}
-.card[data-conf="low"] .flag.title{display:block}
-.card[data-dup]:not([data-dup=""]) .flag.dup{display:block; top:auto; bottom:6px; background:var(--brush)}
+/* Badges are questions, and a question goes away once it is answered. The
+   answer lives in .state inside the sync region, so clearing it is shared. */
+.card[data-conf="low"]:has(.state[data-title=""]) .flag.title{display:block}
+.card[data-dup]:not([data-dup=""]):has(.state[data-decision=""]) .flag.dup{display:block;
+  top:auto; bottom:6px; background:var(--brush)}
+.card:has(.state[data-decision="keep"]) .flag.kept{display:block; top:auto; bottom:6px;
+  background:var(--good)}
+.card:has(.state[data-decision="drop"]) .flag.dropped{display:block; top:auto; bottom:6px;
+  background:var(--warn)}
+.card:has(.state[data-title="ok"]) .flag.titleok{display:block; background:var(--good)}
 /* tag mode: show at a glance which pages already carry the active tag */
 body[data-mode="tag"] .card[data-local-has="1"]{border-color:var(--brush); box-shadow:0 0 0 2px var(--brush-soft)}
 body[data-mode="tag"] .card[data-local-has="1"] .thumb::after{content:"✓"; position:absolute;
@@ -166,10 +175,10 @@ body[data-mode="dup"] .card .dupbar{display:flex}
 .dbtn{border:1px solid var(--rule); border-radius:6px; padding:3px 9px; font-size:11.5px; color:var(--ink-2)}
 .dbtn.keep:hover{border-color:var(--good); color:var(--good)}
 .dbtn.drop:hover{border-color:var(--warn); color:var(--warn)}
-.card:has(.decision[data-decision="keep"]) .dbtn.keep{background:var(--good); border-color:var(--good); color:#fff}
-.card:has(.decision[data-decision="drop"]) .dbtn.drop{background:var(--warn); border-color:var(--warn); color:#fff}
-body[data-mode="dup"] .card:has(.decision[data-decision="drop"]){opacity:.5}
-.decision{display:none}
+.card:has(.state[data-decision="keep"]) .dbtn.keep{background:var(--good); border-color:var(--good); color:#fff}
+.card:has(.state[data-decision="drop"]) .dbtn.drop{background:var(--warn); border-color:var(--warn); color:#fff}
+body[data-mode="dup"] .card:has(.state[data-decision="drop"]){opacity:.5}
+.state{display:none}
 .clusterlead{grid-column:1/-1; font-size:11.5px; color:var(--ink-3); padding:10px 2px 0;
   border-top:1px solid var(--rule); margin-top:4px}
 .clusterlead b{color:var(--ink); font-family:"IBM Plex Mono",monospace}
@@ -185,6 +194,38 @@ body[data-mode="dup"] .card:has(.decision[data-decision="drop"]){opacity:.5}
 .solid{border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:7px;
   padding:7px 13px; font-size:13px; white-space:nowrap}
 .solid:hover{background:var(--accent-ink)}
+/* ---------- page panel ---------- */
+.scrim{position:fixed; inset:0; background:rgba(9,17,22,.45); z-index:20}
+.panel{position:fixed; right:0; top:0; bottom:0; width:min(430px,94vw); z-index:21;
+  background:var(--surface); border-left:1px solid var(--rule); overflow-y:auto;
+  padding:18px 20px 50px; box-shadow:var(--shadow)}
+.panel img{width:100%; border-radius:8px; border:1px solid var(--rule); display:block; margin-bottom:14px}
+.panel .pid{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-3)}
+.pclose{position:absolute; right:14px; top:14px; width:28px; height:28px; border-radius:7px;
+  background:var(--sunk); color:var(--ink-2); display:grid; place-items:center; font-size:15px}
+.ptitle{font-size:15px; font-weight:500; line-height:1.5; border:1px solid var(--rule);
+  border-radius:7px; padding:8px 11px; margin:6px 0 8px; background:var(--surface-2)}
+.psec{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--ink-3); margin:18px 0 7px}
+.pcat{margin-bottom:11px}
+.pcatname{font-size:11.5px; color:var(--ink-3); margin-bottom:4px}
+.pcatname i{font-style:normal; opacity:.7}
+.ptags{display:flex; flex-wrap:wrap; gap:5px}
+.ptag{border:1px solid var(--rule); background:var(--surface-2); color:var(--ink-2);
+  border-radius:999px; padding:4px 11px; font-size:12.5px}
+.ptag:hover{border-color:var(--accent); color:var(--accent-ink)}
+.ptag[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+.pbtn{border:1px solid var(--rule); border-radius:7px; padding:6px 12px; font-size:12.5px; color:var(--ink-2)}
+.pbtn.good[aria-pressed="true"]{background:var(--good); border-color:var(--good); color:#fff}
+.pbtn.bad[aria-pressed="true"]{background:var(--warn); border-color:var(--warn); color:#fff}
+.pbtn:hover{border-color:var(--accent); color:var(--accent-ink)}
+.prow2{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
+.sib{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px}
+.sib a{width:88px; border:1px solid var(--rule); border-radius:6px; overflow:hidden; display:block;
+  text-decoration:none; color:var(--ink-3); font-size:10px; font-family:"IBM Plex Mono",monospace}
+.sib a img{margin:0; border:0; border-radius:0}
+.sib a span{display:block; padding:2px 4px}
+.pnav{display:flex; gap:7px; margin-top:20px}
 [artifact-sync-state="off"]{outline:2px dashed var(--warn)}
 #offbanner{display:none; background:var(--warn-soft); color:var(--warn); padding:8px 18px; font-size:13px}
 </style>
@@ -226,8 +267,9 @@ body[data-mode="dup"] .card:has(.decision[data-decision="drop"]){opacity:.5}
       <button class="chipbtn" data-view="all" aria-pressed="true">全部</button>
       <button class="chipbtn" data-view="untagged" aria-pressed="false">未打标</button>
       <button class="chipbtn" data-view="lowtitle" aria-pressed="false">标题待确认</button>
-      <span class="brushbar" id="brushbar">当前标签：<b id="brushname"></b>
-        <button class="mini" id="brushoff" title="取消">×</button></span>
+      <button class="chipbtn" id="brushtoggle" aria-pressed="false" title="连续给多页打同一个标签">批量刷标签</button>
+      <span class="brushbar" id="brushbar">正在刷：<b id="brushname"></b>
+        <button class="mini" id="brushoff" title="退出">×</button></span>
       <span class="count" id="count"></span>
       <button class="btn" id="clear">清除筛选</button>
     </div>
@@ -236,6 +278,7 @@ body[data-mode="dup"] .card:has(.decision[data-decision="drop"]){opacity:.5}
 </div>
 
 <div id="bar"></div>
+<div id="panel"></div>
 
 <script>
 const META = /*__META__*/null;
@@ -244,7 +287,8 @@ const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
 const cards = () => $$("#grid .card");
 const chipsOf = c => $(".chips", c);
 const tagsOf = c => $$(".tg", c).map(t => t.dataset.tag);
-const state = {mode: "tag", q: "", view: "all", brush: null, filters: new Set(), deck: []};
+const state = {mode: "tag", q: "", view: "all", brush: null, brushing: false,
+               filters: new Set(), deck: [], panel: null};
 
 function directory(){
   return $$("#dir .cat").map(cat => ({
@@ -359,9 +403,71 @@ function setBrush(id){
   state.brush = id;
   $$("#dir .tag").forEach(t => t.dataset.localBrush = (t.dataset.tag === id) ? "1" : "0");
   const idx = tagIndex();
-  $("#brushbar").classList.toggle("on", !!id);
+  $("#brushbar").classList.toggle("on", !!id && state.brushing);
   if (id) $("#brushname").textContent = (idx[id] || {}).name || "";
   refresh();
+}
+
+/* ---- page panel: the ordinary way one page gets tagged ----
+   Everything here mutates the card's own synced DOM from inside a click
+   handler, so each change is saved exactly as if it had been made on the card. */
+function stateEl(card){ return $(".state", card); }
+
+function openPanel(card){
+  state.panel = card.dataset.uid;
+  const idx = tagIndex(), on = new Set(tagsOf(card));
+  const img = $(".thumb img", card);
+  const low = card.dataset.conf === "low";
+  const st = stateEl(card);
+  const dup = card.dataset.dup;
+
+  const cats = directory().map(c => {
+    if (!c.tags.length) return "";
+    return `<div class="pcat"><div class="pcatname">${esc(c.name)} <i>${c.multi ? "多选" : "单选"}</i></div>
+      <div class="ptags">${c.tags.map(t =>
+        `<button class="ptag" data-ptag="${t.id}" aria-pressed="${on.has(t.id)}">${esc(t.name)}</button>`
+      ).join("")}</div></div>`;
+  }).join("");
+
+  let dupBlock = "";
+  if (dup){
+    const sibs = $$(`#grid .card[data-dup="${dup}"]`).filter(c => c !== card);
+    dupBlock = `<div class="psec">相似页 · ${esc($(".why", card)?.textContent || "")}</div>
+      <div class="prow2">
+        <button class="pbtn good" data-pdecide="keep" aria-pressed="${st.dataset.decision === "keep"}">保留这一页</button>
+        <button class="pbtn bad" data-pdecide="drop" aria-pressed="${st.dataset.decision === "drop"}">标记删除</button>
+      </div>
+      <div class="sib">${sibs.map(sc => {
+        const si = $(".thumb img", sc);
+        return `<a href="#" data-goto="${sc.dataset.uid}">${si ? `<img src="${si.getAttribute("src")}" alt="">` : ""}<span>${sc.dataset.uid}</span></a>`;
+      }).join("")}</div>`;
+  }
+
+  $("#panel").innerHTML = `<div class="scrim" data-pclose="1"></div>
+    <div class="panel" role="dialog" aria-label="页面详情">
+      <button class="pclose" data-pclose="1" aria-label="关闭">✕</button>
+      <div class="pid">${card.dataset.uid} · 第 ${card.dataset.uid.split(":")[1]} 页</div>
+      ${img ? `<img src="${img.getAttribute("src")}" alt="">` : ""}
+      <div class="psec">标题</div>
+      <div class="ptitle" id="ptitle" contenteditable="true" spellcheck="false">${esc($(".ttl", card).textContent)}</div>
+      ${low ? `<div class="prow2"><button class="pbtn good" data-ptitleok="1"
+          aria-pressed="${st.dataset.title === "ok"}">✓ 标题已确认（去掉标记）</button></div>` : ""}
+      ${dupBlock}
+      <div class="psec">标签</div>
+      ${cats || '<div class="hint">标签目录是空的 —— 先在左侧新建标签</div>'}
+      <div class="pnav">
+        <button class="pbtn" data-pstep="-1">← 上一页</button>
+        <button class="pbtn" data-pstep="1">下一页 →</button>
+      </div>
+    </div>`;
+}
+function closePanel(){ state.panel = null; $("#panel").innerHTML = ""; }
+function panelCard(){ return state.panel ? $(`#grid .card[data-uid="${state.panel}"]`) : null; }
+function stepPanel(dir){
+  const visible = cards().filter(c => c.dataset.localHidden !== "1");
+  const i = visible.findIndex(c => c.dataset.uid === state.panel);
+  const next = visible[i + dir];
+  if (next){ next.scrollIntoView({block: "center", behavior: "smooth"}); openPanel(next); }
 }
 
 /* ---- events ---- */
@@ -393,28 +499,65 @@ document.addEventListener("click", e => {
   if (act === "untag"){ t.closest(".tg").remove(); refresh(); return; }
   if (act === "decide"){
     const btn = t.closest("[data-act]"), card = btn.closest(".card");
-    const mark = $(".decision", card), want = btn.dataset.decision;
+    const mark = stateEl(card), want = btn.dataset.decision;
     mark.dataset.decision = (mark.dataset.decision === want) ? "" : want;
     return; }
 
-  /* clicking a page: what it does depends on the mode */
+  /* ---- panel controls ---- */
+  if (t.closest("[data-pclose]")){ closePanel(); return; }
+  const ptag = t.closest("[data-ptag]");
+  if (ptag){
+    const card = panelCard(); if (!card) return;
+    const id = ptag.dataset.ptag, want = ptag.getAttribute("aria-pressed") !== "true";
+    applyTag(card, id, want);
+    openPanel(card); refresh(); return; }
+  const pdec = t.closest("[data-pdecide]");
+  if (pdec){
+    const card = panelCard(); if (!card) return;
+    const st = stateEl(card), want = pdec.dataset.pdecide;
+    st.dataset.decision = (st.dataset.decision === want) ? "" : want;
+    openPanel(card); return; }
+  if (t.closest("[data-ptitleok]")){
+    const card = panelCard(); if (!card) return;
+    const st = stateEl(card);
+    st.dataset.title = st.dataset.title === "ok" ? "" : "ok";
+    openPanel(card); return; }
+  const goto = t.closest("[data-goto]");
+  if (goto){ e.preventDefault();
+    const c = $(`#grid .card[data-uid="${goto.dataset.goto}"]`);
+    if (c){ c.scrollIntoView({block: "center"}); openPanel(c); } return; }
+  const pstep = t.closest("[data-pstep]");
+  if (pstep){ stepPanel(Number(pstep.dataset.pstep)); return; }
+
+  /* ---- clicking a page ---- */
   const thumb = t.closest(".thumb");
   if (thumb){
     const card = thumb.closest(".card");
-    if (state.mode === "tag"){
-      if (!state.brush) return;
-      applyTag(card, state.brush, !tagsOf(card).includes(state.brush));
-      refresh();
-    } else if (state.mode === "deck"){
+    if (state.mode === "deck"){
       const uid = card.dataset.uid, at = state.deck.indexOf(uid);
       at === -1 ? state.deck.push(uid) : state.deck.splice(at, 1);
       renumberDeck(); renderBar();
+    } else if (state.brushing && state.brush){
+      applyTag(card, state.brush, !tagsOf(card).includes(state.brush));
+      refresh();
+    } else {
+      openPanel(card);          // the default: open the page and tag it
     }
     return;
   }
 
   if (t.closest("#handle")){ document.body.classList.toggle("drawer-open"); return; }
-  if (t.closest("#brushoff")){ setBrush(null); return; }
+  if (t.closest("#brushtoggle")){
+    state.brushing = !state.brushing;
+    document.body.classList.toggle("brushing", state.brushing);
+    $("#brushtoggle").setAttribute("aria-pressed", String(state.brushing));
+    if (!state.brushing) setBrush(null);
+    if (state.brushing && !document.body.classList.contains("drawer-open"))
+      document.body.classList.add("drawer-open");
+    refresh(); return; }
+  if (t.closest("#brushoff")){
+    state.brushing = false; document.body.classList.remove("brushing");
+    $("#brushtoggle").setAttribute("aria-pressed", "false"); setBrush(null); return; }
   const modeBtn = t.closest(".mode"); if (modeBtn){ setMode(modeBtn.dataset.mode); return; }
   const viewBtn = t.closest("[data-view]");
   if (viewBtn){ state.view = viewBtn.dataset.view;
@@ -447,6 +590,11 @@ document.addEventListener("click", e => {
 
 $("#q").addEventListener("input", e => { state.q = e.target.value; refresh(); });
 document.addEventListener("input", e => {
+  if (e.target.id === "ptitle"){
+    const card = panelCard();
+    if (card) $(".ttl", card).textContent = e.target.textContent;
+    return;
+  }
   const span = e.target.closest?.(".tname"); if (!span) return;
   const id = span.closest(".tag").dataset.tag, name = span.textContent.trim();
   $$(`#grid .tg[data-tag="${id}"] .n`).forEach(n => { n.textContent = name; });
@@ -455,7 +603,10 @@ document.addEventListener("input", e => {
 document.addEventListener("keydown", e => {
   if (e.key === "/" && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)
       && !document.activeElement.isContentEditable){ e.preventDefault(); $("#q").focus(); }
-  if (e.key === "Escape" && state.brush) setBrush(null);
+  if (e.key === "Escape"){ if (state.panel) closePanel(); else if (state.brush) setBrush(null); }
+  if (state.panel && (e.key === "ArrowRight" || e.key === "ArrowLeft")
+      && !document.activeElement.isContentEditable){
+    e.preventDefault(); stepPanel(e.key === "ArrowRight" ? 1 : -1); }
 });
 document.addEventListener("claude:sync-off", () => { $("#offbanner").style.display = "block"; });
 window.addEventListener("resize", renderBar);
@@ -468,7 +619,8 @@ async function doExport(btn){
     pages: Object.fromEntries(cards().map(c => [c.dataset.uid, {
       title: $(".ttl", c).textContent.trim(),
       tags: tagsOf(c),
-      dup_decision: $(".decision", c)?.dataset.decision || "",
+      dup_decision: $(".state", c)?.dataset.decision || "",
+      title_confirmed: $(".state", c)?.dataset.title === "ok",
     }])),
   };
   const text = JSON.stringify(payload, null, 1);

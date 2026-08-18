@@ -104,16 +104,20 @@ def _cards_html(pages: list[dict], tag_names: dict, width: int,
             ' data-local-hidden="0" data-local-has="0" data-local-deck="">'
             '<div class="thumb">{thumb}<span class="uid">{uid}</span>'
             '<span class="flag title">标题待确认</span>'
-            '<span class="flag dup">相似页</span></div>'
+            '<span class="flag titleok">标题已确认</span>'
+            '<span class="flag dup">相似页</span>'
+            '<span class="flag kept">已保留</span>'
+            '<span class="flag dropped">已标记删除</span></div>'
             "<artifact-sync><div class=\"cardbody\">"
             '<span class="ttl" contenteditable="true" spellcheck="false">{title}</span>'
             '<div class="chips">{chips}</div>'
-            '<span class="decision" data-decision="{decision}"></span>'
+            '<span class="state" data-decision="{decision}" data-title="{titleok}"></span>'
             "</div></artifact-sync>{dupbar}</article>".format(
                 uid=html.escape(uid), doc=html.escape(page["doc"]),
                 conf="low" if low else "ok", thumb=thumb,
                 dup=html.escape(dup), order=order.get(uid, 0),
                 decision=html.escape(page.get("dup_decision", "")),
+                titleok="ok" if page.get("title_confirmed") else "",
                 title=html.escape(page.get("title") or ""), chips=chips,
                 dupbar=dupbar)
         )
