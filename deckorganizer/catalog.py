@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pymupdf
 
-from . import pdfdoc, taxonomy, titles
+from . import dedupe, fingerprint, pdfdoc, taxonomy, titles
 
 
 def build(sources, out_dir: Path, thumb_width: int = 480, log=print) -> dict:
@@ -54,13 +54,24 @@ def build(sources, out_dir: Path, thumb_width: int = 480, log=print) -> dict:
                 "words": rec.word_count, "images": rec.image_count,
                 "tags": [],                 # applied by hand in the workbench
                 "note": "",
+                # Kept for duplicate detection only. The page text is not shown
+                # as a title and is never turned into tags.
+                "text": rec.text,
+                "text_hash": fingerprint.text_hash(rec.text),
+                "dhash": fingerprint.dhash(rec.png_path) if rec.png_path else 0,
+                "dup_cluster": "", "dup_decision": "",
                 "last_used": None, "use_count": 0,
             })
+
+    clusters = dedupe.find(pages)
+    log("  duplicate check: %d clusters covering %d pages"
+        % (len(clusters), sum(len(c["members"]) for c in clusters)))
 
     index = {
         "built_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "docs": docs, "pages": pages,
         "categories": taxonomy.starter(),
+        "duplicates": clusters,
         "exports": [],
     }
     (out_dir / "index.json").write_text(
@@ -94,7 +105,7 @@ def apply_edits(index: dict, edits: dict) -> dict:
         page = by_uid.get(uid)
         if not page:
             continue
-        for field in ("title", "tags", "note"):
+        for field in ("title", "tags", "note", "dup_decision"):
             if field in patch:
                 page[field] = patch[field]
         touched += 1

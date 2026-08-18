@@ -38,10 +38,14 @@ def _thumb(path: str, width: int, quality: int = 68) -> str:
 def _directory_html(categories: list[dict]) -> str:
     out = []
     for cat in categories:
+        # Must stay in step with tagLi() in the template: the page appends new
+        # tags with that builder, and a mismatch would leave half the directory
+        # missing its controls.
         tags = "".join(
-            '<li class="tag" data-tag="{id}" data-local-filter="0">'
-            '<button class="mini" data-act="filter" title="按此标签筛选">●</button>'
+            '<li class="tag" data-tag="{id}" data-local-filter="0" data-local-brush="0">'
+            '<button class="brush" data-act="brush" title="选为当前标签">✎</button>'
             '<span class="tname" contenteditable="true" spellcheck="false">{name}</span>'
+            '<button class="mini" data-act="filter" title="按此标签筛选">◎</button>'
             '<button class="mini del" data-act="deltag" title="删除标签">×</button>'
             "</li>".format(id=html.escape(t["id"]), name=html.escape(t["name"]))
             for t in cat["tags"]
@@ -63,7 +67,15 @@ def _directory_html(categories: list[dict]) -> str:
     return "".join(out)
 
 
-def _cards_html(pages: list[dict], tag_names: dict, width: int) -> str:
+def _cards_html(pages: list[dict], tag_names: dict, width: int,
+                clusters: list[dict]) -> str:
+    reason = {}
+    order = {}
+    for n, cluster in enumerate(clusters, start=1):
+        for m, uid in enumerate(cluster["members"]):
+            reason[uid] = cluster["reason"]
+            order[uid] = n * 100 + m
+
     out = []
     for page in pages:
         thumb = ""
@@ -77,19 +89,33 @@ def _cards_html(pages: list[dict], tag_names: dict, width: int) -> str:
             for t in page.get("tags", [])
         )
         low = page.get("title_confidence", 1.0) < LOW_TITLE_CONFIDENCE
+        uid = page["uid"]
+        dup = page.get("dup_cluster", "")
+        dupbar = ""
+        if dup:
+            dupbar = (
+                '<div class="dupbar"><span class="why">{why}</span>'
+                '<button class="dbtn keep" data-act="decide" data-decision="keep">保留</button>'
+                '<button class="dbtn drop" data-act="decide" data-decision="drop">标记删除</button>'
+                "</div>".format(why=html.escape(reason.get(uid, "相似页"))))
         out.append(
             '<article class="card" data-uid="{uid}" data-doc="{doc}" data-conf="{conf}"'
-            ' data-local-pick="0" data-local-hidden="0">'
+            ' data-dup="{dup}" data-dup-order="{order}"'
+            ' data-local-hidden="0" data-local-has="0" data-local-deck="">'
             '<div class="thumb">{thumb}<span class="uid">{uid}</span>'
-            '<button class="pick" data-act="pick" title="选入拼装">+</button></div>'
+            '<span class="flag title">标题待确认</span>'
+            '<span class="flag dup">相似页</span></div>'
             "<artifact-sync><div class=\"cardbody\">"
             '<span class="ttl" contenteditable="true" spellcheck="false">{title}</span>'
             '<div class="chips">{chips}</div>'
-            '<span class="untag">未打标</span>'
-            "</div></artifact-sync></article>".format(
-                uid=html.escape(page["uid"]), doc=html.escape(page["doc"]),
+            '<span class="decision" data-decision="{decision}"></span>'
+            "</div></artifact-sync>{dupbar}</article>".format(
+                uid=html.escape(uid), doc=html.escape(page["doc"]),
                 conf="low" if low else "ok", thumb=thumb,
-                title=html.escape(page.get("title") or ""), chips=chips)
+                dup=html.escape(dup), order=order.get(uid, 0),
+                decision=html.escape(page.get("dup_decision", "")),
+                title=html.escape(page.get("title") or ""), chips=chips,
+                dupbar=dupbar)
         )
     return "".join(out)
 
@@ -97,14 +123,17 @@ def _cards_html(pages: list[dict], tag_names: dict, width: int) -> str:
 def build(index: dict, out_html: Path, thumb_width: int = 340) -> Path:
     categories = index.get("categories", [])
     tag_names = {t["id"]: t["name"] for c in categories for t in c["tags"]}
+    clusters = index.get("duplicates", [])
     meta = {"builtAt": index.get("built_at", ""),
+            "duplicateCount": len(clusters),
             "docs": [{"id": d["id"], "title": d["title"], "pages": d["pages"]}
                      for d in index["docs"]]}
 
     html_text = TEMPLATE.read_text(encoding="utf-8")
     html_text = html_text.replace("<!--__DIRECTORY__-->", _directory_html(categories))
-    html_text = html_text.replace("<!--__CARDS__-->",
-                                  _cards_html(index["pages"], tag_names, thumb_width))
+    html_text = html_text.replace(
+        "<!--__CARDS__-->",
+        _cards_html(index["pages"], tag_names, thumb_width, clusters))
     html_text = html_text.replace(
         "/*__META__*/null", json.dumps(meta, ensure_ascii=False).replace("</", "<\\/"))
 

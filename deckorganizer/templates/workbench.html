@@ -9,9 +9,11 @@
   --ink:#132029; --ink-2:#445866; --ink-3:#7C8F9B;
   --rule:#D2DDE2; --rule-soft:#E4EBEE;
   --accent:#0E747E; --accent-ink:#0A5A62; --accent-soft:#D8EBED;
+  --brush:#7A4FB5; --brush-soft:#EAE2F6;
   --warn:#A2451C; --warn-soft:#F7E7DE;
   --good:#2C7256; --good-soft:#DEEEE6;
   --shadow:0 1px 2px rgba(19,32,41,.06), 0 10px 26px -18px rgba(19,32,41,.34);
+  --aside-w:284px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -19,6 +21,7 @@
     --ink:#DFE8EC; --ink-2:#A2B4BE; --ink-3:#778B97;
     --rule:#2A3D48; --rule-soft:#223440;
     --accent:#4FB4BC; --accent-ink:#83D2D8; --accent-soft:#12333A;
+    --brush:#A98BD8; --brush-soft:#241A38;
     --warn:#DB8B62; --warn-soft:#35211A;
     --good:#68B392; --good-soft:#163026;
     --shadow:0 1px 2px rgba(0,0,0,.34), 0 10px 26px -18px rgba(0,0,0,.72);
@@ -29,159 +32,193 @@
   --ink:#DFE8EC; --ink-2:#A2B4BE; --ink-3:#778B97;
   --rule:#2A3D48; --rule-soft:#223440;
   --accent:#4FB4BC; --accent-ink:#83D2D8; --accent-soft:#12333A;
+  --brush:#A98BD8; --brush-soft:#241A38;
   --warn:#DB8B62; --warn-soft:#35211A;
   --good:#68B392; --good-soft:#163026;
   --shadow:0 1px 2px rgba(0,0,0,.34), 0 10px 26px -18px rgba(0,0,0,.72);
 }
 *{box-sizing:border-box}
-body{margin:0; padding-bottom:var(--dock-h,0px); background:var(--ground); color:var(--ink); font-size:15px; line-height:1.6;
+body{margin:0; background:var(--ground); color:var(--ink); font-size:15px; line-height:1.6;
   font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-  -webkit-font-smoothing:antialiased}
+  -webkit-font-smoothing:antialiased; padding-bottom:var(--bar-h,0px)}
 button{font-family:inherit; cursor:pointer; border:0; background:none; color:inherit; padding:0}
-.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
 :focus-visible{outline:2px solid var(--accent); outline-offset:1px; border-radius:4px}
 [contenteditable]{outline:none}
-[contenteditable]:focus{background:var(--accent-soft); border-radius:3px;
-  box-shadow:0 0 0 2px var(--accent-soft)}
+[contenteditable]:focus{background:var(--accent-soft); border-radius:3px; box-shadow:0 0 0 2px var(--accent-soft)}
 
-/* ---- header ---- */
-header{background:var(--surface); border-bottom:1px solid var(--rule); padding:14px 22px;
-  display:flex; gap:20px; align-items:center; flex-wrap:wrap}
-header h1{margin:0; font-size:17px; font-weight:700}
-header .sub{font-size:12px; color:var(--ink-3)}
+/* ---------- header ---------- */
+header{background:var(--surface); border-bottom:1px solid var(--rule); padding:11px 20px;
+  display:flex; gap:16px; align-items:center; flex-wrap:wrap; position:sticky; top:0; z-index:9}
+header h1{margin:0; font-size:16px; font-weight:700; white-space:nowrap}
 .spacer{flex:1}
-.btn{border:1px solid var(--rule); background:var(--surface); color:var(--ink-2);
-  border-radius:7px; padding:7px 13px; font-size:13px}
-.btn:hover{border-color:var(--accent); color:var(--accent-ink)}
-.btn.on{background:var(--accent); border-color:var(--accent); color:#fff}
-.stat{font-size:12px; color:var(--ink-3); white-space:nowrap}
-.stat b{font-family:"IBM Plex Mono",monospace; font-size:15px; color:var(--ink);
-  font-variant-numeric:tabular-nums}
+.modes{display:flex; gap:3px; background:var(--sunk); padding:3px; border-radius:9px}
+.mode{padding:6px 14px; border-radius:7px; font-size:13px; color:var(--ink-2); white-space:nowrap}
+.mode small{display:block; font-size:10px; opacity:.7; line-height:1.2}
+body[data-mode="tag"]  .mode[data-mode="tag"],
+body[data-mode="deck"] .mode[data-mode="deck"],
+body[data-mode="dup"]  .mode[data-mode="dup"]{background:var(--surface); color:var(--ink);
+  font-weight:500; box-shadow:var(--shadow)}
+.stat{font-size:11.5px; color:var(--ink-3); white-space:nowrap}
+.stat b{font-family:"IBM Plex Mono",monospace; font-size:15px; color:var(--ink); font-variant-numeric:tabular-nums}
 .stat.a b{color:var(--accent-ink)} .stat.w b{color:var(--warn)}
+.btn{border:1px solid var(--rule); background:var(--surface); color:var(--ink-2);
+  border-radius:7px; padding:6px 12px; font-size:12.5px; white-space:nowrap}
+.btn:hover{border-color:var(--accent); color:var(--accent-ink)}
 
-/* ---- shell ---- */
-.shell{display:grid; grid-template-columns:262px 1fr; align-items:start}
-@media(max-width:900px){.shell{grid-template-columns:1fr}}
-aside{position:sticky; top:0; max-height:100vh; overflow-y:auto; background:var(--surface-2);
-  border-right:1px solid var(--rule); padding:16px 14px 140px}
-.dirhead{display:flex; align-items:center; gap:8px; margin-bottom:12px}
-.dirhead h2{margin:0; font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+/* ---------- drawer: pushes the grid, never covers it ---------- */
+.shell{display:grid; grid-template-columns:0px 1fr; transition:grid-template-columns .22s ease}
+body.drawer-open .shell{grid-template-columns:var(--aside-w) 1fr}
+aside{overflow:hidden; background:var(--surface-2); border-right:1px solid var(--rule);
+  position:sticky; top:53px; max-height:calc(100vh - 53px); display:flex; flex-direction:column}
+body:not(.drawer-open) aside{border-right-color:transparent}
+.asidein{width:var(--aside-w); overflow-y:auto; padding:14px 13px 40px; flex:1}
+.handle{position:fixed; left:0; top:50%; transform:translateY(-50%); z-index:11;
+  background:var(--accent); color:#fff; border-radius:0 9px 9px 0; padding:16px 5px;
+  font-size:12px; writing-mode:vertical-rl; letter-spacing:.14em; box-shadow:var(--shadow)}
+body.drawer-open .handle{left:var(--aside-w)}
+.handle{transition:left .22s ease}
+
+.dirhead{display:flex; align-items:center; gap:8px; margin-bottom:11px}
+.dirhead h2{margin:0; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
   color:var(--ink-3); font-family:"IBM Plex Mono",monospace; font-weight:500}
-
-#dir{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
-.cat{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:9px 10px}
-.chead{display:flex; align-items:center; gap:5px; margin-bottom:7px}
+#dir{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px}
+.cat{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:8px 9px}
+.chead{display:flex; align-items:center; gap:4px; margin-bottom:6px}
 .cname{font-size:12.5px; font-weight:500; flex:1; min-width:0}
-.mini{width:19px; height:19px; border-radius:5px; background:var(--sunk); color:var(--ink-3);
-  font-size:12px; line-height:1; display:grid; place-items:center; flex:none}
+.mini{width:18px; height:18px; border-radius:5px; background:var(--sunk); color:var(--ink-3);
+  font-size:11px; line-height:1; display:grid; place-items:center; flex:none}
 .mini:hover{background:var(--accent); color:#fff}
 .mini.del:hover{background:var(--warn)}
 .multi{font-family:"IBM Plex Mono",monospace; font-size:9px; padding:1px 5px; border-radius:4px;
   background:var(--sunk); color:var(--ink-3); flex:none}
 .cat[data-multi="1"] .multi::after{content:"多选"}
 .cat[data-multi="0"] .multi::after{content:"单选"}
-.tlist{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:4px}
-.tag{display:flex; align-items:center; gap:3px; border:1px solid var(--rule);
-  border-radius:999px; padding:2px 4px 2px 8px; background:var(--surface); font-size:11.5px}
-.tag .tname{min-width:10px}
-.tag[data-local-filter="1"]{background:var(--accent); border-color:var(--accent); color:#fff}
-.tag[data-local-filter="1"] .mini{background:rgba(255,255,255,.25); color:#fff}
-.tag .mini{width:15px; height:15px; font-size:10px}
-.emptytags{font-size:11px; color:var(--ink-3)}
+.tlist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:3px}
+.tag{display:flex; align-items:center; gap:3px; border:1px solid var(--rule); border-radius:6px;
+  padding:2px 3px 2px 4px; background:var(--surface); font-size:11.5px}
+.tag .tname{flex:1; min-width:10px; padding:1px 2px}
+.brush{width:18px; height:18px; border-radius:5px; background:var(--sunk); color:var(--ink-3);
+  font-size:10px; display:grid; place-items:center; flex:none}
+.brush:hover{background:var(--brush); color:#fff}
+body:not([data-mode="tag"]) .brush{display:none}
+.tag[data-local-brush="1"]{border-color:var(--brush); background:var(--brush-soft)}
+.tag[data-local-brush="1"] .brush{background:var(--brush); color:#fff}
+.tag[data-local-filter="1"]{border-color:var(--accent); background:var(--accent-soft)}
+.tag[data-local-filter="1"] .mini[data-act="filter"]{background:var(--accent); color:#fff}
+.emptytags{font-size:11px; color:var(--ink-3); padding:2px}
+.hint{font-size:11px; color:var(--ink-3); line-height:1.6}
 
-/* ---- toolbar ---- */
-.toolbar{position:sticky; top:0; z-index:6; background:var(--ground);
-  border-bottom:1px solid var(--rule); padding:12px 20px; display:flex; gap:10px;
+/* ---------- toolbar ---------- */
+.toolbar{position:sticky; top:53px; z-index:6; background:var(--ground);
+  border-bottom:1px solid var(--rule); padding:10px 18px; display:flex; gap:9px;
   align-items:center; flex-wrap:wrap}
-#q{flex:1 1 220px; min-width:170px; border:1px solid var(--rule); background:var(--surface);
-  color:var(--ink); border-radius:7px; padding:8px 12px; font-size:14px; font-family:inherit}
+#q{flex:1 1 200px; min-width:150px; border:1px solid var(--rule); background:var(--surface);
+  color:var(--ink); border-radius:7px; padding:7px 11px; font-size:13.5px; font-family:inherit}
 .chipbtn{border:1px solid var(--rule); background:var(--surface); color:var(--ink-2);
-  border-radius:999px; padding:5px 11px; font-size:12.5px}
+  border-radius:999px; padding:4px 11px; font-size:12.5px}
 .chipbtn[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
 .count{font-size:12.5px; color:var(--ink-3); font-variant-numeric:tabular-nums; white-space:nowrap}
+.brushbar{display:none; align-items:center; gap:8px; font-size:12.5px; color:var(--brush);
+  background:var(--brush-soft); border:1px solid var(--brush); border-radius:7px; padding:5px 11px}
+body[data-mode="tag"] .brushbar.on{display:flex}
+.brushbar b{font-weight:600}
 
-/* ---- grid ---- */
-main{padding:16px 20px 40px}
-/* The dock is fixed, so the page reserves room for it rather than
-   letting it cover the last rows of cards — which made them unclickable. */
-
-.grid{display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(236px,1fr))}
+/* ---------- grid ---------- */
+main{padding:14px 18px 40px}
+.grid{display:grid; gap:11px; grid-template-columns:repeat(auto-fill,minmax(224px,1fr))}
 .card{background:var(--surface); border:1px solid var(--rule); border-radius:9px;
   overflow:hidden; display:flex; flex-direction:column; position:relative}
 .card[data-local-hidden="1"]{display:none}
-.card[data-local-pick="1"]{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft)}
-.thumb{aspect-ratio:16/9; background:var(--sunk); position:relative}
+.thumb{aspect-ratio:16/9; background:var(--sunk); position:relative; cursor:pointer}
 .thumb img{width:100%; height:100%; object-fit:cover; display:block}
 .uid{position:absolute; left:6px; top:6px; font-family:"IBM Plex Mono",monospace; font-size:10px;
   background:rgba(11,20,26,.78); color:#fff; padding:1px 6px; border-radius:4px}
-.pick{position:absolute; right:6px; top:6px; width:24px; height:24px; border-radius:6px;
-  background:rgba(11,20,26,.6); color:#fff; border:1px solid rgba(255,255,255,.6);
-  display:grid; place-items:center; font-size:13px}
-.card[data-local-pick="1"] .pick{background:var(--accent); border-color:var(--accent)}
-.card[data-conf="low"] .thumb::after{content:"标题待确认"; position:absolute; left:6px; bottom:6px;
-  font-size:10px; background:var(--warn); color:#fff; padding:1px 6px; border-radius:4px}
-.cardbody{padding:9px 11px 11px; display:flex; flex-direction:column; gap:7px; flex:1}
+.flag{position:absolute; right:6px; top:6px; font-size:10px; padding:1px 6px; border-radius:4px;
+  background:var(--warn); color:#fff; display:none}
+.card[data-conf="low"] .flag.title{display:block}
+.card[data-dup]:not([data-dup=""]) .flag.dup{display:block; top:auto; bottom:6px; background:var(--brush)}
+/* tag mode: show at a glance which pages already carry the active tag */
+body[data-mode="tag"] .card[data-local-has="1"]{border-color:var(--brush); box-shadow:0 0 0 2px var(--brush-soft)}
+body[data-mode="tag"] .card[data-local-has="1"] .thumb::after{content:"✓"; position:absolute;
+  right:7px; bottom:7px; width:22px; height:22px; border-radius:6px; background:var(--brush);
+  color:#fff; display:grid; place-items:center; font-size:13px}
+/* deck mode: numbered picks */
+body[data-mode="deck"] .card[data-local-deck]:not([data-local-deck=""]){border-color:var(--accent);
+  box-shadow:0 0 0 2px var(--accent-soft)}
+body[data-mode="deck"] .card[data-local-deck]:not([data-local-deck=""]) .thumb::after{
+  content:attr(data-local-deck); position:absolute; right:7px; bottom:7px; min-width:22px; height:22px;
+  padding:0 5px; border-radius:6px; background:var(--accent); color:#fff; display:grid;
+  place-items:center; font-size:12px; font-family:"IBM Plex Mono",monospace}
+.cardbody{padding:8px 10px 10px; display:flex; flex-direction:column; gap:6px; flex:1}
 .ttl{font-size:12.5px; font-weight:500; line-height:1.45; min-height:1.4em}
-.chips{display:flex; flex-wrap:wrap; gap:4px; margin-top:auto; min-height:19px}
+.chips{display:flex; flex-wrap:wrap; gap:3px; margin-top:auto; min-height:17px}
 .tg{display:inline-flex; align-items:center; gap:2px; background:var(--accent-soft);
   color:var(--accent-ink); border-radius:4px; padding:1px 3px 1px 6px; font-size:10.5px}
-.tg .x{width:13px; height:13px; border-radius:3px; font-size:10px; line-height:1;
-  display:grid; place-items:center; color:var(--accent-ink); opacity:.55}
+.tg .x{width:13px; height:13px; border-radius:3px; font-size:10px; display:grid;
+  place-items:center; color:var(--accent-ink); opacity:.55}
 .tg .x:hover{background:var(--warn); color:#fff; opacity:1}
-.untag{font-size:10.5px; color:var(--ink-3)}
-.card:has(.chips:not(:empty)) .untag{display:none}
-.empty{grid-column:1/-1; padding:56px; text-align:center; color:var(--ink-3)}
+.empty{grid-column:1/-1; padding:52px; text-align:center; color:var(--ink-3)}
 
-/* ---- dock ---- */
-.dock{position:fixed; left:0; right:0; bottom:0; z-index:12; background:var(--surface);
-  border-top:1px solid var(--rule); box-shadow:var(--shadow); padding:12px 20px;
-  max-height:42vh; overflow-y:auto}
-.dockhead{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px}
-.dockhead .n{font-size:13.5px; font-weight:500; white-space:nowrap}
-.dockhead .n b{font-family:"IBM Plex Mono",monospace; color:var(--accent-ink); font-size:16px}
-.palette{display:flex; flex-direction:column; gap:8px}
-.prow{display:flex; gap:7px; align-items:baseline; flex-wrap:wrap}
-.plabel{font-size:11px; color:var(--ink-3); width:76px; flex:none; text-align:right}
-.pt{border:1px solid var(--rule); background:var(--surface-2); color:var(--ink-2);
-  border-radius:999px; padding:3px 10px; font-size:12px}
-.pt:hover{border-color:var(--accent); color:var(--accent-ink)}
-.pt[data-state="all"]{background:var(--accent); border-color:var(--accent); color:#fff}
-.pt[data-state="some"]{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink)}
-.cmd{background:var(--sunk); border-radius:7px; padding:8px 11px; font-family:"IBM Plex Mono",monospace;
-  font-size:11px; color:var(--ink-2); overflow-x:auto; white-space:nowrap; flex:1 1 260px; min-width:0}
+/* ---------- duplicate review ---------- */
+.dupbar{display:none; gap:6px; align-items:center; padding:6px 10px; border-top:1px solid var(--rule-soft)}
+body[data-mode="dup"] .card .dupbar{display:flex}
+.dupbar .why{font-size:10.5px; color:var(--ink-3); flex:1; min-width:0}
+.dbtn{border:1px solid var(--rule); border-radius:6px; padding:3px 9px; font-size:11.5px; color:var(--ink-2)}
+.dbtn.keep:hover{border-color:var(--good); color:var(--good)}
+.dbtn.drop:hover{border-color:var(--warn); color:var(--warn)}
+.card:has(.decision[data-decision="keep"]) .dbtn.keep{background:var(--good); border-color:var(--good); color:#fff}
+.card:has(.decision[data-decision="drop"]) .dbtn.drop{background:var(--warn); border-color:var(--warn); color:#fff}
+body[data-mode="dup"] .card:has(.decision[data-decision="drop"]){opacity:.5}
+.decision{display:none}
+.clusterlead{grid-column:1/-1; font-size:11.5px; color:var(--ink-3); padding:10px 2px 0;
+  border-top:1px solid var(--rule); margin-top:4px}
+.clusterlead b{color:var(--ink); font-family:"IBM Plex Mono",monospace}
+
+/* ---------- bottom bar (deck mode only) ---------- */
+.bar{position:fixed; left:0; right:0; bottom:0; z-index:12; background:var(--surface);
+  border-top:1px solid var(--rule); box-shadow:var(--shadow); padding:11px 18px;
+  display:flex; gap:11px; align-items:center; flex-wrap:wrap}
+.bar .n{font-size:13px; font-weight:500; white-space:nowrap}
+.bar .n b{font-family:"IBM Plex Mono",monospace; color:var(--accent-ink); font-size:16px}
+.cmd{background:var(--sunk); border-radius:7px; padding:7px 10px; font-family:"IBM Plex Mono",monospace;
+  font-size:11px; color:var(--ink-2); overflow-x:auto; white-space:nowrap; flex:1 1 240px; min-width:0}
 .solid{border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:7px;
   padding:7px 13px; font-size:13px; white-space:nowrap}
 .solid:hover{background:var(--accent-ink)}
-.hint{font-size:11.5px; color:var(--ink-3)}
 [artifact-sync-state="off"]{outline:2px dashed var(--warn)}
-#offbanner{display:none; background:var(--warn-soft); color:var(--warn); padding:8px 20px;
-  font-size:13px; border-bottom:1px solid var(--warn)}
+#offbanner{display:none; background:var(--warn-soft); color:var(--warn); padding:8px 18px; font-size:13px}
 </style>
 
-<div id="offbanner">同步已关闭 —— 这个视图的改动不会被保存。请刷新页面。</div>
+<div id="offbanner">同步已关闭 —— 这个视图的改动不会被保存，请刷新页面。</div>
 
 <header>
-  <div>
-    <h1>案例页工作台</h1>
-    <div class="sub" id="src"></div>
+  <h1>案例页工作台</h1>
+  <div class="modes">
+    <button class="mode" data-mode="tag">打标签<small>给页面打标签</small></button>
+    <button class="mode" data-mode="deck">组页<small>挑页做成 deck</small></button>
+    <button class="mode" data-mode="dup">查重<small id="dupn">相似页确认</small></button>
   </div>
   <div class="spacer"></div>
-  <span class="stat"><b id="s-total">0</b> 总页数</span>
+  <span class="stat"><b id="s-total">0</b> 页</span>
   <span class="stat a"><b id="s-tagged">0</b> 已打标</span>
   <span class="stat w"><b id="s-untagged">0</b> 未打标</span>
   <button class="btn" id="export">导出 JSON</button>
 </header>
 
+<button class="handle" id="handle">标签栏</button>
+
 <div class="shell">
-  <aside>
+  <aside><div class="asidein">
     <div class="dirhead">
-      <h2>标签目录</h2>
-      <div class="spacer"></div>
-      <button class="btn" id="addcat" style="padding:4px 9px; font-size:12px">+ 类别</button>
+      <h2>标签目录</h2><div class="spacer"></div>
+      <button class="btn" id="addcat" style="padding:3px 8px; font-size:11.5px">+ 类别</button>
     </div>
     <ul artifact-sync id="dir"><!--__DIRECTORY__--></ul>
-    <p class="hint" style="margin-top:14px">点标签名可直接改字；点圆点按标签筛选；<b>×</b> 删除。改动自动保存并同步给所有人。</p>
-  </aside>
+    <p class="hint" style="margin-top:12px">
+      <b>✎</b> 选为当前标签，然后点页面批量打标<br>
+      <b>◎</b> 按标签筛选　<b>×</b> 删除<br>
+      点标签名可直接改字。改动自动保存并同步。</p>
+  </div></aside>
 
   <div>
     <div class="toolbar">
@@ -189,58 +226,55 @@ main{padding:16px 20px 40px}
       <button class="chipbtn" data-view="all" aria-pressed="true">全部</button>
       <button class="chipbtn" data-view="untagged" aria-pressed="false">未打标</button>
       <button class="chipbtn" data-view="lowtitle" aria-pressed="false">标题待确认</button>
-      <button class="chipbtn" data-view="picked" aria-pressed="false">已选</button>
+      <span class="brushbar" id="brushbar">当前标签：<b id="brushname"></b>
+        <button class="mini" id="brushoff" title="取消">×</button></span>
       <span class="count" id="count"></span>
-      <button class="btn" id="pickall" style="padding:5px 11px; font-size:12.5px">全选当前</button>
-      <button class="btn" id="clear" style="padding:5px 11px; font-size:12.5px">清除</button>
+      <button class="btn" id="clear">清除筛选</button>
     </div>
     <main><div class="grid" id="grid"><!--__CARDS__--></div></main>
   </div>
 </div>
 
-<div id="dock"></div>
+<div id="bar"></div>
 
 <script>
 const META = /*__META__*/null;
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
-
 const cards = () => $$("#grid .card");
-const picked = () => cards().filter(c => c.dataset.localPick === "1");
 const chipsOf = c => $(".chips", c);
 const tagsOf = c => $$(".tg", c).map(t => t.dataset.tag);
-const view = { mode: "all", q: "", filters: new Set() };
+const state = {mode: "tag", q: "", view: "all", brush: null, filters: new Set(), deck: []};
 
-/* ---------- tag directory helpers (read from the synced DOM) ---------- */
 function directory(){
   return $$("#dir .cat").map(cat => ({
-    id: cat.dataset.cat,
-    name: $(".cname", cat).textContent.trim(),
-    multi: cat.dataset.multi === "1",
-    el: cat,
-    tags: $$(".tag", cat).map(t => ({
-      id: t.dataset.tag, name: $(".tname", t).textContent.trim(), el: t })),
+    id: cat.dataset.cat, name: $(".cname", cat).textContent.trim(),
+    multi: cat.dataset.multi === "1", el: cat,
+    tags: $$(".tag", cat).map(t => ({id: t.dataset.tag, name: $(".tname", t).textContent.trim(), el: t})),
   }));
 }
 const tagIndex = () => Object.fromEntries(
   directory().flatMap(c => c.tags.map(t => [t.id, {name: t.name, cat: c.id, multi: c.multi}])));
-
-function nextId(prefix, selector, attr){
-  const used = $$(selector).map(e => parseInt((e.dataset[attr] || "").slice(prefix.length), 10) || 0);
+function nextId(prefix, sel, attr){
+  const used = $$(sel).map(e => parseInt((e.dataset[attr] || "").slice(prefix.length), 10) || 0);
   return prefix + String(Math.max(0, ...used) + 1).padStart(3, "0");
 }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
-/* ---------- markup builders (only ever called inside a gesture) ---------- */
+/* ---- markup builders: only ever called from inside an event handler ---- */
 function tagLi(id, name){
   const li = document.createElement("li");
-  li.className = "tag"; li.dataset.tag = id;
-  const dot = document.createElement("button");
-  dot.className = "mini"; dot.dataset.act = "filter"; dot.textContent = "●"; dot.title = "按此标签筛选";
-  const span = document.createElement("span");
-  span.className = "tname"; span.contentEditable = "true"; span.spellcheck = false; span.textContent = name;
+  li.className = "tag"; li.dataset.tag = id; li.dataset.localFilter = "0"; li.dataset.localBrush = "0";
+  const brush = document.createElement("button");
+  brush.className = "brush"; brush.dataset.act = "brush"; brush.textContent = "✎"; brush.title = "选为当前标签";
+  const name_ = document.createElement("span");
+  name_.className = "tname"; name_.contentEditable = "true"; name_.spellcheck = false; name_.textContent = name;
+  const filt = document.createElement("button");
+  filt.className = "mini"; filt.dataset.act = "filter"; filt.textContent = "◎"; filt.title = "按此标签筛选";
   const del = document.createElement("button");
   del.className = "mini del"; del.dataset.act = "deltag"; del.textContent = "×"; del.title = "删除标签";
-  li.append(dot, span, del);
+  li.append(brush, name_, filt, del);
   return li;
 }
 function chip(id, name){
@@ -248,215 +282,193 @@ function chip(id, name){
   s.className = "tg"; s.dataset.tag = id;
   const n = document.createElement("span"); n.className = "n"; n.textContent = name;
   const x = document.createElement("button"); x.className = "x"; x.dataset.act = "untag"; x.textContent = "×";
-  s.append(n, x);
-  return s;
+  s.append(n, x); return s;
 }
-
-/* ---------- applying tags (mutates synced DOM directly) ---------- */
 function applyTag(card, tagId, on){
   const idx = tagIndex(), info = idx[tagId];
   if (!info) return;
-  const chips = chipsOf(card);
-  const existing = $(`.tg[data-tag="${tagId}"]`, chips);
+  const chips = chipsOf(card), existing = $(`.tg[data-tag="${tagId}"]`, chips);
   if (on && !existing){
-    if (!info.multi){
-      $$(".tg", chips).forEach(t => { if ((idx[t.dataset.tag] || {}).cat === info.cat) t.remove(); });
-    }
+    if (!info.multi) $$(".tg", chips).forEach(t => {
+      if ((idx[t.dataset.tag] || {}).cat === info.cat) t.remove(); });
     chips.append(chip(tagId, info.name));
-  } else if (!on && existing){
-    existing.remove();
-  }
+  } else if (!on && existing) existing.remove();
 }
 
-/* ---------- local-only view state ---------- */
+/* ---- view state (all local to this viewer) ---- */
 function refresh(){
-  const idx = tagIndex();
-  const q = view.q.trim().toLowerCase();
+  const idx = tagIndex(), q = state.q.trim().toLowerCase();
   let shown = 0;
   cards().forEach(c => {
     const tags = tagsOf(c);
     let ok = true;
-    if (view.mode === "untagged") ok = tags.length === 0;
-    else if (view.mode === "lowtitle") ok = c.dataset.conf === "low";
-    else if (view.mode === "picked") ok = c.dataset.localPick === "1";
-    if (ok && view.filters.size) ok = [...view.filters].every(f => tags.includes(f));
+    if (state.mode === "dup") ok = !!c.dataset.dup;
+    else if (state.view === "untagged") ok = tags.length === 0;
+    else if (state.view === "lowtitle") ok = c.dataset.conf === "low";
+    if (ok && state.filters.size) ok = [...state.filters].every(f => tags.includes(f));
     if (ok && q){
       const hay = ($(".ttl", c).textContent + " " + c.dataset.uid + " " +
                    tags.map(t => (idx[t] || {}).name || "").join(" ")).toLowerCase();
       ok = q.split(/\s+/).filter(Boolean).every(t => hay.includes(t));
     }
     c.dataset.localHidden = ok ? "0" : "1";
+    c.dataset.localHas = (state.brush && tags.includes(state.brush)) ? "1" : "0";
+    // Cluster members sit far apart in page order; in review they need to be
+    // side by side. `order` is an inline style on the card, which lives outside
+    // the sync region, so reordering stays local to this viewer.
+    c.style.order = state.mode === "dup" ? (c.dataset.dupOrder || "0") : "";
     if (ok) shown++;
   });
-  const total = cards().length;
-  const tagged = cards().filter(c => tagsOf(c).length).length;
+  const total = cards().length, tagged = cards().filter(c => tagsOf(c).length).length;
   $("#s-total").textContent = total;
   $("#s-tagged").textContent = tagged;
   $("#s-untagged").textContent = total - tagged;
   $("#count").textContent = `${shown} / ${total} 页`;
-  $("#grid").dataset.empty = shown ? "0" : "1";
-  renderDock();
+  renderBar();
 }
 
-function reserveDockSpace(){
-  const panel = $("#dock .dock");
-  document.documentElement.style.setProperty(
-    "--dock-h", (panel ? panel.getBoundingClientRect().height + 12 : 0) + "px");
+function renderBar(){
+  const bar = $("#bar");
+  if (state.mode !== "deck" || !state.deck.length){
+    bar.innerHTML = "";
+    document.documentElement.style.setProperty("--bar-h", "0px");
+    return;
+  }
+  const cmd = `python3 -m deckorganizer compose --library library --pages "${state.deck.join(",")}" --out 新案例.pdf`;
+  bar.innerHTML = `<div class="bar">
+    <span class="n">deck 已选 <b>${state.deck.length}</b> 页（按点击顺序）</span>
+    <code class="cmd" id="cmd">${esc(cmd)}</code>
+    <button class="solid" id="copycmd">复制组页命令</button>
+    <button class="btn" id="cleardeck">清空</button></div>`;
+  const h = $("#bar .bar").getBoundingClientRect().height;
+  document.documentElement.style.setProperty("--bar-h", (h + 10) + "px");
+}
+function renumberDeck(){
+  cards().forEach(c => c.dataset.localDeck = "");
+  state.deck.forEach((uid, i) => {
+    const c = $(`#grid .card[data-uid="${uid}"]`);
+    if (c) c.dataset.localDeck = String(i + 1);
+  });
+}
+function setMode(m){
+  state.mode = m; document.body.dataset.mode = m;
+  $$(".mode").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+  refresh(); renumberDeck();
+}
+function setBrush(id){
+  state.brush = id;
+  $$("#dir .tag").forEach(t => t.dataset.localBrush = (t.dataset.tag === id) ? "1" : "0");
+  const idx = tagIndex();
+  $("#brushbar").classList.toggle("on", !!id);
+  if (id) $("#brushname").textContent = (idx[id] || {}).name || "";
+  refresh();
 }
 
-function renderDock(){
-  const sel = picked();
-  const dock = $("#dock");
-  if (!sel.length){ dock.innerHTML = ""; reserveDockSpace(); return; }
-  const uids = sel.map(c => c.dataset.uid);
-  const rows = directory().map(cat => {
-    if (!cat.tags.length) return "";
-    const btns = cat.tags.map(t => {
-      const n = sel.filter(c => tagsOf(c).includes(t.id)).length;
-      const state = n === 0 ? "none" : (n === sel.length ? "all" : "some");
-      return `<button class="pt" data-apply="${t.id}" data-state="${state}">${esc(t.name)}</button>`;
-    }).join("");
-    return `<div class="prow"><span class="plabel">${esc(cat.name)}</span>${btns}</div>`;
-  }).join("");
-  const cmd = `python3 -m deckorganizer compose --library library --pages "${uids.join(",")}" --out 新案例.pdf`;
-  dock.innerHTML = `<div class="dock">
-    <div class="dockhead">
-      <span class="n">已选 <b>${sel.length}</b> 页</span>
-      <span class="hint">点标签给选中的页批量打标；再点一次取消</span>
-      <div class="spacer"></div>
-      <code class="cmd" id="cmd">${esc(cmd)}</code>
-      <button class="solid" id="copycmd">复制组页命令</button>
-      <button class="btn" id="unpick">取消选择</button>
-    </div>
-    <div class="palette">${rows || '<span class="hint">标签目录还是空的 —— 先在左侧新建标签</span>'}</div>
-  </div>`;
-  reserveDockSpace();
-}
-
-function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c =>
-  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-
-/* ---------- events ---------- */
+/* ---- events ---- */
 document.addEventListener("click", e => {
   const t = e.target;
-
   const act = t.closest("[data-act]")?.dataset.act;
-  if (act === "filter"){
-    const li = t.closest(".tag"), id = li.dataset.tag;
+
+  if (act === "brush"){ const li = t.closest(".tag");
+    setBrush(li.dataset.localBrush === "1" ? null : li.dataset.tag); return; }
+  if (act === "filter"){ const li = t.closest(".tag"), id = li.dataset.tag;
     const on = li.dataset.localFilter === "1";
     li.dataset.localFilter = on ? "0" : "1";
-    on ? view.filters.delete(id) : view.filters.add(id);
-    refresh(); return;
-  }
-  if (act === "deltag"){
-    const li = t.closest(".tag"), id = li.dataset.tag;
+    on ? state.filters.delete(id) : state.filters.add(id); refresh(); return; }
+  if (act === "deltag"){ const li = t.closest(".tag"), id = li.dataset.tag;
     $$(`#grid .tg[data-tag="${id}"]`).forEach(c => c.remove());
-    view.filters.delete(id);
-    li.remove(); refresh(); return;
-  }
-  if (act === "addtag"){
-    const cat = t.closest(".cat");
+    state.filters.delete(id); if (state.brush === id) setBrush(null);
+    li.remove(); refresh(); return; }
+  if (act === "addtag"){ const cat = t.closest(".cat");
     const li = tagLi(nextId("t", "#dir .tag", "tag"), "新标签");
-    $(".tlist", cat).append(li);
-    $(".emptytags", cat)?.remove();
-    const span = $(".tname", li);
-    span.focus(); getSelection().selectAllChildren(span);
+    $(".tlist", cat).append(li); $(".emptytags", cat)?.remove();
+    const s = $(".tname", li); s.focus(); getSelection().selectAllChildren(s); return; }
+  if (act === "delcat"){ const cat = t.closest(".cat");
+    $$(".tag", cat).forEach(x => { const id = x.dataset.tag;
+      $$(`#grid .tg[data-tag="${id}"]`).forEach(c => c.remove());
+      state.filters.delete(id); if (state.brush === id) setBrush(null); });
+    cat.remove(); refresh(); return; }
+  if (act === "multi"){ const cat = t.closest(".cat");
+    cat.dataset.multi = cat.dataset.multi === "1" ? "0" : "1"; return; }
+  if (act === "untag"){ t.closest(".tg").remove(); refresh(); return; }
+  if (act === "decide"){
+    const btn = t.closest("[data-act]"), card = btn.closest(".card");
+    const mark = $(".decision", card), want = btn.dataset.decision;
+    mark.dataset.decision = (mark.dataset.decision === want) ? "" : want;
+    return; }
+
+  /* clicking a page: what it does depends on the mode */
+  const thumb = t.closest(".thumb");
+  if (thumb){
+    const card = thumb.closest(".card");
+    if (state.mode === "tag"){
+      if (!state.brush) return;
+      applyTag(card, state.brush, !tagsOf(card).includes(state.brush));
+      refresh();
+    } else if (state.mode === "deck"){
+      const uid = card.dataset.uid, at = state.deck.indexOf(uid);
+      at === -1 ? state.deck.push(uid) : state.deck.splice(at, 1);
+      renumberDeck(); renderBar();
+    }
     return;
-  }
-  if (act === "delcat"){
-    const cat = t.closest(".cat");
-    const ids = $$(".tag", cat).map(x => x.dataset.tag);
-    ids.forEach(id => { $$(`#grid .tg[data-tag="${id}"]`).forEach(c => c.remove()); view.filters.delete(id); });
-    cat.remove(); refresh(); return;
-  }
-  if (act === "multi"){
-    const cat = t.closest(".cat");
-    cat.dataset.multi = cat.dataset.multi === "1" ? "0" : "1";
-    return;
-  }
-  if (act === "untag"){
-    t.closest(".tg").remove(); refresh(); return;
-  }
-  if (act === "pick"){
-    const card = t.closest(".card");
-    card.dataset.localPick = card.dataset.localPick === "1" ? "0" : "1";
-    refresh(); return;
   }
 
+  if (t.closest("#handle")){ document.body.classList.toggle("drawer-open"); return; }
+  if (t.closest("#brushoff")){ setBrush(null); return; }
+  const modeBtn = t.closest(".mode"); if (modeBtn){ setMode(modeBtn.dataset.mode); return; }
+  const viewBtn = t.closest("[data-view]");
+  if (viewBtn){ state.view = viewBtn.dataset.view;
+    $$("[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b === viewBtn)));
+    refresh(); return; }
   if (t.closest("#addcat")){
     const cat = document.createElement("li");
     cat.className = "cat"; cat.dataset.cat = nextId("c", "#dir .cat", "cat"); cat.dataset.multi = "1";
     cat.innerHTML = `<div class="chead">
-        <span class="cname" contenteditable="true" spellcheck="false">新类别</span>
-        <button class="multi" data-act="multi" title="切换单选/多选"></button>
-        <button class="mini" data-act="addtag" title="新增标签">+</button>
-        <button class="mini del" data-act="delcat" title="删除类别">×</button>
+      <span class="cname" contenteditable="true" spellcheck="false">新类别</span>
+      <button class="multi" data-act="multi" title="切换单选/多选"></button>
+      <button class="mini" data-act="addtag" title="新增标签">+</button>
+      <button class="mini del" data-act="delcat" title="删除类别">×</button>
       </div><ul class="tlist"></ul>`;
     $("#dir").append(cat);
-    const span = $(".cname", cat);
-    span.focus(); getSelection().selectAllChildren(span);
-    return;
-  }
-  const applyBtn = t.closest("[data-apply]");
-  if (applyBtn){
-    const id = applyBtn.dataset.apply, sel = picked();
-    const on = applyBtn.dataset.state !== "all";
-    sel.forEach(c => applyTag(c, id, on));
-    refresh(); return;
-  }
-  const viewBtn = t.closest("[data-view]");
-  if (viewBtn){
-    view.mode = viewBtn.dataset.view;
-    $$("[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b === viewBtn)));
-    refresh(); return;
-  }
-  if (t.closest("#pickall")){
-    cards().filter(c => c.dataset.localHidden !== "1").forEach(c => c.dataset.localPick = "1");
-    refresh(); return;
-  }
-  if (t.closest("#unpick")){ cards().forEach(c => c.dataset.localPick = "0"); refresh(); return; }
+    const s = $(".cname", cat); s.focus(); getSelection().selectAllChildren(s); return; }
+  if (t.closest("#cleardeck")){ state.deck = []; renumberDeck(); renderBar(); return; }
   if (t.closest("#clear")){
-    view.q = ""; $("#q").value = ""; view.mode = "all"; view.filters.clear();
+    state.q = ""; $("#q").value = ""; state.view = "all"; state.filters.clear();
     $$("#dir .tag").forEach(l => l.dataset.localFilter = "0");
     $$("[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === "all")));
-    refresh(); return;
-  }
+    refresh(); return; }
   if (t.closest("#copycmd")){
     const b = t.closest("#copycmd");
     navigator.clipboard?.writeText($("#cmd").textContent).then(
       () => { b.textContent = "已复制"; setTimeout(() => b.textContent = "复制组页命令", 1400); },
-      () => { b.textContent = "请手动复制"; });
-    return;
-  }
+      () => { b.textContent = "请手动复制"; }); return; }
   if (t.closest("#export")) doExport(t.closest("#export"));
 });
 
-$("#q").addEventListener("input", e => { view.q = e.target.value; refresh(); });
+$("#q").addEventListener("input", e => { state.q = e.target.value; refresh(); });
+document.addEventListener("input", e => {
+  const span = e.target.closest?.(".tname"); if (!span) return;
+  const id = span.closest(".tag").dataset.tag, name = span.textContent.trim();
+  $$(`#grid .tg[data-tag="${id}"] .n`).forEach(n => { n.textContent = name; });
+  if (state.brush === id) $("#brushname").textContent = name;
+});
 document.addEventListener("keydown", e => {
   if (e.key === "/" && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)
       && !document.activeElement.isContentEditable){ e.preventDefault(); $("#q").focus(); }
-});
-/* Renaming a tag in the directory renames it everywhere it is in use. */
-document.addEventListener("input", e => {
-  const span = e.target.closest?.(".tname");
-  if (!span) return;
-  const id = span.closest(".tag").dataset.tag, name = span.textContent.trim();
-  $$(`#grid .tg[data-tag="${id}"] .n`).forEach(n => { n.textContent = name; });
-  renderDock();
+  if (e.key === "Escape" && state.brush) setBrush(null);
 });
 document.addEventListener("claude:sync-off", () => { $("#offbanner").style.display = "block"; });
+window.addEventListener("resize", renderBar);
 
-/* ---------- export ---------- */
 async function doExport(btn){
   const payload = {
     exportedAt: new Date().toISOString(),
-    categories: directory().map(c => ({
-      id: c.id, name: c.name, multi: c.multi,
-      tags: c.tags.map(t => ({id: t.id, name: t.name})),
-    })),
+    categories: directory().map(c => ({id: c.id, name: c.name, multi: c.multi,
+      tags: c.tags.map(t => ({id: t.id, name: t.name}))})),
     pages: Object.fromEntries(cards().map(c => [c.dataset.uid, {
       title: $(".ttl", c).textContent.trim(),
       tags: tagsOf(c),
+      dup_decision: $(".decision", c)?.dataset.decision || "",
     }])),
   };
   const text = JSON.stringify(payload, null, 1);
@@ -464,16 +476,16 @@ async function doExport(btn){
   if (downloads){
     try {
       await downloads.save({filename: "deck-organizer-edits.json", data: text});
-      btn.textContent = "已导出"; setTimeout(() => btn.textContent = "导出 JSON", 1600);
-      return;
-    } catch (err) { /* viewer declined or unavailable — fall through to clipboard */ }
+      btn.textContent = "已导出"; setTimeout(() => btn.textContent = "导出 JSON", 1600); return;
+    } catch (err) {}
   }
   navigator.clipboard?.writeText(text).then(
     () => { btn.textContent = "已复制到剪贴板"; setTimeout(() => btn.textContent = "导出 JSON", 1800); },
     () => { btn.textContent = "导出失败"; });
 }
 
-window.addEventListener("resize", reserveDockSpace);
-$("#src").textContent = META.docs.map(d => `${d.id} · ${d.title}（${d.pages}页）`).join("　｜　");
+document.body.dataset.mode = "tag";
+document.body.classList.add("drawer-open");
+$("#dupn").textContent = META.duplicateCount ? `${META.duplicateCount} 组待确认` : "相似页确认";
 refresh();
 </script>
