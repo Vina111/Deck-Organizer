@@ -78,9 +78,39 @@ body:not(.drawer-open) aside{border-right-color:transparent}
 body.drawer-open .handle{left:var(--aside-w)}
 .handle{transition:left .22s ease}
 
-.dirhead{display:flex; align-items:center; gap:8px; margin-bottom:11px}
-.dirhead h2{margin:0; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
-  color:var(--ink-3); font-family:"IBM Plex Mono",monospace; font-weight:500}
+/* The left rail changes job with the mode, so it changes colour and wording
+   with it too — the same list means "apply this" while tagging and "filter by
+   this" while building a deck, and that has to be unmistakable at a glance. */
+.banner{border-radius:9px; padding:10px 12px; margin-bottom:12px; font-size:12px; line-height:1.6}
+body[data-mode="tag"] .banner{background:var(--brush-soft); border:1px solid var(--brush); color:var(--brush)}
+body:not([data-mode="tag"]) .banner{background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent-ink)}
+.banner .ttl2{display:block; font-size:13px; font-weight:700; margin-bottom:3px}
+.banner b{font-weight:700}
+.banner .step{display:block; opacity:.95}
+.banner .cur{margin-top:8px; padding-top:8px; border-top:1px dashed currentColor;
+  display:flex; align-items:center; gap:7px; flex-wrap:wrap}
+.banner .cur .name{font-weight:700; font-size:13px}
+.banner .applyall{border:1px solid currentColor; border-radius:6px; padding:3px 9px;
+  font-size:11.5px; color:inherit; background:rgba(255,255,255,.35)}
+.banner .applyall:hover{background:var(--brush); color:#fff}
+
+.acat{margin-bottom:12px}
+.acatname{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:5px}
+.alist{display:flex; flex-wrap:wrap; gap:4px}
+.at{border:1px solid var(--rule); background:var(--surface); color:var(--ink-2);
+  border-radius:999px; padding:4px 10px; font-size:12px; display:inline-flex; align-items:center; gap:5px}
+.at .c{font-family:"IBM Plex Mono",monospace; font-size:10px; opacity:.6; font-variant-numeric:tabular-nums}
+.at:hover{border-color:var(--brush); color:var(--brush)}
+body:not([data-mode="tag"]) .at:hover{border-color:var(--accent); color:var(--accent-ink)}
+body[data-mode="tag"] .at[aria-pressed="true"]{background:var(--brush); border-color:var(--brush); color:#fff}
+body:not([data-mode="tag"]) .at[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+.at[aria-pressed="true"] .c{opacity:.85}
+
+.dirwrap{border-top:1px solid var(--rule); padding-top:10px; margin-top:4px}
+.dirwrap summary{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); cursor:pointer; padding:3px 0}
+.dirtools{display:flex; align-items:center; gap:8px; margin:8px 0 9px; flex-wrap:wrap}
 #dir{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px}
 .cat{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:8px 9px}
 .chead{display:flex; align-items:center; gap:4px; margin-bottom:6px}
@@ -97,14 +127,7 @@ body.drawer-open .handle{left:var(--aside-w)}
 .tag{display:flex; align-items:center; gap:3px; border:1px solid var(--rule); border-radius:6px;
   padding:2px 3px 2px 4px; background:var(--surface); font-size:11.5px}
 .tag .tname{flex:1; min-width:10px; padding:1px 2px}
-.brush{width:18px; height:18px; border-radius:5px; background:var(--sunk); color:var(--ink-3);
-  font-size:10px; display:grid; place-items:center; flex:none}
-.brush:hover{background:var(--brush); color:#fff}
-body:not(.brushing) .brush{display:none}
-.tag[data-local-brush="1"]{border-color:var(--brush); background:var(--brush-soft)}
-.tag[data-local-brush="1"] .brush{background:var(--brush); color:#fff}
-.tag[data-local-filter="1"]{border-color:var(--accent); background:var(--accent-soft)}
-.tag[data-local-filter="1"] .mini[data-act="filter"]{background:var(--accent); color:#fff}
+/* the directory is for editing the vocabulary; selecting happens in .at above */
 .emptytags{font-size:11px; color:var(--ink-3); padding:2px}
 .hint{font-size:11px; color:var(--ink-3); line-height:1.6}
 
@@ -121,7 +144,6 @@ body:not(.brushing) .brush{display:none}
 .brushbar{display:none; align-items:center; gap:8px; font-size:12.5px; color:var(--brush);
   background:var(--brush-soft); border:1px solid var(--brush); border-radius:7px; padding:5px 11px}
 body[data-mode="tag"] .brushbar.on{display:flex}
-body:not([data-mode="tag"]) #brushtoggle{display:none}
 .brushbar b{font-weight:600}
 
 /* ---------- grid ---------- */
@@ -134,6 +156,13 @@ main{padding:14px 18px 40px}
 .thumb img{width:100%; height:100%; object-fit:cover; display:block}
 .uid{position:absolute; left:6px; top:6px; font-family:"IBM Plex Mono",monospace; font-size:10px;
   background:rgba(11,20,26,.78); color:#fff; padding:1px 6px; border-radius:4px}
+/* Always visible, never hover-only: this is the way into a page's details, and
+   a control you have to discover by hovering is a control nobody finds. */
+.info{position:absolute; right:6px; top:6px; width:22px; height:22px; border-radius:6px;
+  background:rgba(11,20,26,.55); color:#fff; border:1px solid rgba(255,255,255,.45);
+  display:grid; place-items:center; font-size:11px; font-style:italic; opacity:.75}
+.card:hover .info{opacity:1}
+.info:hover{background:var(--accent); border-color:var(--accent)}
 .flag{position:absolute; right:6px; top:6px; font-size:10px; padding:1px 6px; border-radius:4px;
   background:var(--warn); color:#fff; display:none}
 /* Badges are questions, and a question goes away once it is answered. The
@@ -166,7 +195,8 @@ body[data-mode="deck"] .card[data-local-deck]:not([data-local-deck=""]) .thumb::
 .tg .x{width:13px; height:13px; border-radius:3px; font-size:10px; display:grid;
   place-items:center; color:var(--accent-ink); opacity:.55}
 .tg .x:hover{background:var(--warn); color:#fff; opacity:1}
-.empty{grid-column:1/-1; padding:52px; text-align:center; color:var(--ink-3)}
+.empty{grid-column:1/-1; padding:52px; text-align:center; color:var(--ink-3); display:none}
+#grid[data-empty="1"] .empty{display:block}
 
 /* ---------- duplicate review ---------- */
 .dupbar{display:none; gap:6px; align-items:center; padding:6px 10px; border-top:1px solid var(--rule-soft)}
@@ -250,15 +280,16 @@ body[data-mode="dup"] .card:has(.state[data-decision="drop"]){opacity:.5}
 
 <div class="shell">
   <aside><div class="asidein">
-    <div class="dirhead">
-      <h2>标签目录</h2><div class="spacer"></div>
-      <button class="btn" id="addcat" style="padding:3px 8px; font-size:11.5px">+ 类别</button>
-    </div>
-    <ul artifact-sync id="dir"><!--__DIRECTORY__--></ul>
-    <p class="hint" style="margin-top:12px">
-      <b>✎</b> 选为当前标签，然后点页面批量打标<br>
-      <b>◎</b> 按标签筛选　<b>×</b> 删除<br>
-      点标签名可直接改字。改动自动保存并同步。</p>
+    <div class="banner" id="banner"></div>
+    <div id="actions"></div>
+    <details class="dirwrap" id="dirwrap">
+      <summary>标签目录 · 新建 / 改名 / 删除</summary>
+      <div class="dirtools">
+        <button class="btn" id="addcat" style="padding:3px 8px; font-size:11.5px">+ 类别</button>
+        <span class="hint">点标签名可直接改字　<b>×</b> 删除</span>
+      </div>
+      <ul artifact-sync id="dir"><!--__DIRECTORY__--></ul>
+    </details>
   </div></aside>
 
   <div>
@@ -267,13 +298,12 @@ body[data-mode="dup"] .card:has(.state[data-decision="drop"]){opacity:.5}
       <button class="chipbtn" data-view="all" aria-pressed="true">全部</button>
       <button class="chipbtn" data-view="untagged" aria-pressed="false">未打标</button>
       <button class="chipbtn" data-view="lowtitle" aria-pressed="false">标题待确认</button>
-      <button class="chipbtn" id="brushtoggle" aria-pressed="false" title="连续给多页打同一个标签">批量刷标签</button>
-      <span class="brushbar" id="brushbar">正在刷：<b id="brushname"></b>
-        <button class="mini" id="brushoff" title="退出">×</button></span>
+      <span class="brushbar" id="brushbar">正在打：<b id="brushname"></b>
+        <button class="mini" id="brushoff" title="取消选中">×</button></span>
       <span class="count" id="count"></span>
       <button class="btn" id="clear">清除筛选</button>
     </div>
-    <main><div class="grid" id="grid"><!--__CARDS__--></div></main>
+    <main><div class="grid" id="grid"><!--__CARDS__--><div class="empty" id="emptymsg"></div></div></main>
   </div>
 </div>
 
@@ -287,8 +317,11 @@ const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
 const cards = () => $$("#grid .card");
 const chipsOf = c => $(".chips", c);
 const tagsOf = c => $$(".tg", c).map(t => t.dataset.tag);
-const state = {mode: "tag", q: "", view: "all", brush: null, brushing: false,
-               filters: new Set(), deck: [], panel: null};
+/* One tag is active while tagging (a page can still hold many tags — what is
+   single here is the tag you are currently applying). Filters stay multi-select,
+   because narrowing a library is a different job from labelling a page. */
+const state = {mode: "tag", q: "", view: "all", activeTag: null, filters: new Set(),
+               deck: [], panel: null, lastClicked: null};
 
 function directory(){
   return $$("#dir .cat").map(cat => ({
@@ -309,16 +342,12 @@ function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c =>
 /* ---- markup builders: only ever called from inside an event handler ---- */
 function tagLi(id, name){
   const li = document.createElement("li");
-  li.className = "tag"; li.dataset.tag = id; li.dataset.localFilter = "0"; li.dataset.localBrush = "0";
-  const brush = document.createElement("button");
-  brush.className = "brush"; brush.dataset.act = "brush"; brush.textContent = "✎"; brush.title = "选为当前标签";
+  li.className = "tag"; li.dataset.tag = id;
   const name_ = document.createElement("span");
   name_.className = "tname"; name_.contentEditable = "true"; name_.spellcheck = false; name_.textContent = name;
-  const filt = document.createElement("button");
-  filt.className = "mini"; filt.dataset.act = "filter"; filt.textContent = "◎"; filt.title = "按此标签筛选";
   const del = document.createElement("button");
   del.className = "mini del"; del.dataset.act = "deltag"; del.textContent = "×"; del.title = "删除标签";
-  li.append(brush, name_, filt, del);
+  li.append(name_, del);
   return li;
 }
 function chip(id, name){
@@ -349,14 +378,16 @@ function refresh(){
     if (state.mode === "dup") ok = !!c.dataset.dup;
     else if (state.view === "untagged") ok = tags.length === 0;
     else if (state.view === "lowtitle") ok = c.dataset.conf === "low";
-    if (ok && state.filters.size) ok = [...state.filters].every(f => tags.includes(f));
+    if (ok && state.mode !== "tag" && state.filters.size)
+      ok = [...state.filters].every(f => tags.includes(f));
     if (ok && q){
       const hay = ($(".ttl", c).textContent + " " + c.dataset.uid + " " +
                    tags.map(t => (idx[t] || {}).name || "").join(" ")).toLowerCase();
       ok = q.split(/\s+/).filter(Boolean).every(t => hay.includes(t));
     }
     c.dataset.localHidden = ok ? "0" : "1";
-    c.dataset.localHas = (state.brush && tags.includes(state.brush)) ? "1" : "0";
+    c.dataset.localHas = (state.mode === "tag" && state.activeTag
+                          && tags.includes(state.activeTag)) ? "1" : "0";
     // Cluster members sit far apart in page order; in review they need to be
     // side by side. `order` is an inline style on the card, which lives outside
     // the sync region, so reordering stays local to this viewer.
@@ -368,7 +399,48 @@ function refresh(){
   $("#s-tagged").textContent = tagged;
   $("#s-untagged").textContent = total - tagged;
   $("#count").textContent = `${shown} / ${total} 页`;
+  const grid = $("#grid");
+  grid.dataset.empty = shown ? "0" : "1";
+  if (!shown) $("#emptymsg").textContent = state.mode === "dup"
+    ? "没有相似页需要确认" : "没有页面符合当前筛选 —— 放宽条件或换个关键词";
+  renderActions();
   renderBar();
+}
+
+function renderActions(){
+  const tagging = state.mode === "tag";
+  const counts = {};
+  cards().forEach(c => tagsOf(c).forEach(t => counts[t] = (counts[t] || 0) + 1));
+
+  $("#actions").innerHTML = directory().map(cat => {
+    if (!cat.tags.length) return "";
+    const chips = cat.tags.map(t => {
+      const on = tagging ? state.activeTag === t.id : state.filters.has(t.id);
+      return `<button class="at" data-use="${t.id}" aria-pressed="${on}">${esc(t.name)}` +
+             `<span class="c">${counts[t.id] || 0}</span></button>`;
+    }).join("");
+    return `<div class="acat"><div class="acatname">${esc(cat.name)}</div>
+      <div class="alist">${chips}</div></div>`;
+  }).join("") || '<p class="hint">标签目录是空的 —— 在下方新建类别和标签</p>';
+
+  const idx = tagIndex();
+  if (tagging){
+    const cur = state.activeTag ? (idx[state.activeTag] || {}).name : "";
+    const visible = cards().filter(c => c.dataset.localHidden !== "1").length;
+    $("#banner").innerHTML = `<span class="ttl2">打标签模式</span>
+      <span class="step">① 点下面一个标签选中　② 点页面给它打上，再点一次取消</span>
+      <span class="step">按住 Shift 点第二页 = 中间整段一起打</span>` +
+      (cur ? `<span class="cur">正在打：<span class="name">${esc(cur)}</span>
+        <button class="applyall" data-applyall="1">给当前 ${visible} 页全部打上</button></span>` : "");
+  } else {
+    const n = state.filters.size;
+    $("#banner").innerHTML = `<span class="ttl2">${state.mode === "deck" ? "组页模式" : "查重模式"}</span>
+      <span class="step">下面的标签用来<b>筛选</b>页面${n ? `　已选 ${n} 个` : ""}</span>
+      <span class="step">${state.mode === "deck"
+        ? "点页面加入 deck，卡片上显示顺序号" : "同一组的相似页排在一起，逐张确认保留或删除"}</span>`;
+  }
+  $("#brushbar").classList.toggle("on", tagging && !!state.activeTag);
+  if (tagging && state.activeTag) $("#brushname").textContent = (idx[state.activeTag] || {}).name || "";
 }
 
 function renderBar(){
@@ -397,15 +469,28 @@ function renumberDeck(){
 function setMode(m){
   state.mode = m; document.body.dataset.mode = m;
   $$(".mode").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+  // The rail carries one meaning per mode, so switching modes clears what it
+  // was holding. Carrying a selection across meant arriving in a mode with
+  // pages already hidden by a filter the rail no longer shows.
+  state.activeTag = null;
+  state.filters.clear();
+  state.lastClicked = null;
   refresh(); renumberDeck();
 }
-function setBrush(id){
-  state.brush = id;
-  $$("#dir .tag").forEach(t => t.dataset.localBrush = (t.dataset.tag === id) ? "1" : "0");
-  const idx = tagIndex();
-  $("#brushbar").classList.toggle("on", !!id && state.brushing);
-  if (id) $("#brushname").textContent = (idx[id] || {}).name || "";
+function setActiveTag(id){ state.activeTag = id; state.lastClicked = null; refresh(); }
+
+/* one tag, many pages — the three ways to select those pages */
+function applyToCards(list, tagId){
+  const anyMissing = list.some(c => !tagsOf(c).includes(tagId));
+  list.forEach(c => applyTag(c, tagId, anyMissing));
   refresh();
+}
+function rangeBetween(fromUid, toUid){
+  const visible = cards().filter(c => c.dataset.localHidden !== "1");
+  const a = visible.findIndex(c => c.dataset.uid === fromUid);
+  const b = visible.findIndex(c => c.dataset.uid === toUid);
+  if (a === -1 || b === -1) return [];
+  return visible.slice(Math.min(a, b), Math.max(a, b) + 1);
 }
 
 /* ---- page panel: the ordinary way one page gets tagged ----
@@ -415,7 +500,7 @@ function stateEl(card){ return $(".state", card); }
 
 function openPanel(card){
   state.panel = card.dataset.uid;
-  const idx = tagIndex(), on = new Set(tagsOf(card));
+  const on = new Set(tagsOf(card));
   const img = $(".thumb img", card);
   const low = card.dataset.conf === "low";
   const st = stateEl(card);
@@ -475,15 +560,9 @@ document.addEventListener("click", e => {
   const t = e.target;
   const act = t.closest("[data-act]")?.dataset.act;
 
-  if (act === "brush"){ const li = t.closest(".tag");
-    setBrush(li.dataset.localBrush === "1" ? null : li.dataset.tag); return; }
-  if (act === "filter"){ const li = t.closest(".tag"), id = li.dataset.tag;
-    const on = li.dataset.localFilter === "1";
-    li.dataset.localFilter = on ? "0" : "1";
-    on ? state.filters.delete(id) : state.filters.add(id); refresh(); return; }
   if (act === "deltag"){ const li = t.closest(".tag"), id = li.dataset.tag;
     $$(`#grid .tg[data-tag="${id}"]`).forEach(c => c.remove());
-    state.filters.delete(id); if (state.brush === id) setBrush(null);
+    state.filters.delete(id); if (state.activeTag === id) state.activeTag = null;
     li.remove(); refresh(); return; }
   if (act === "addtag"){ const cat = t.closest(".cat");
     const li = tagLi(nextId("t", "#dir .tag", "tag"), "新标签");
@@ -492,7 +571,7 @@ document.addEventListener("click", e => {
   if (act === "delcat"){ const cat = t.closest(".cat");
     $$(".tag", cat).forEach(x => { const id = x.dataset.tag;
       $$(`#grid .tg[data-tag="${id}"]`).forEach(c => c.remove());
-      state.filters.delete(id); if (state.brush === id) setBrush(null); });
+      state.filters.delete(id); if (state.activeTag === id) state.activeTag = null; });
     cat.remove(); refresh(); return; }
   if (act === "multi"){ const cat = t.closest(".cat");
     cat.dataset.multi = cat.dataset.multi === "1" ? "0" : "1"; return; }
@@ -529,35 +608,43 @@ document.addEventListener("click", e => {
   const pstep = t.closest("[data-pstep]");
   if (pstep){ stepPanel(Number(pstep.dataset.pstep)); return; }
 
+  /* the rail: applies a tag while tagging, filters otherwise */
+  const use = t.closest("[data-use]");
+  if (use){
+    const id = use.dataset.use;
+    if (state.mode === "tag") setActiveTag(state.activeTag === id ? null : id);
+    else { state.filters.has(id) ? state.filters.delete(id) : state.filters.add(id); refresh(); }
+    return; }
+  if (t.closest("[data-applyall]")){
+    if (!state.activeTag) return;
+    applyToCards(cards().filter(c => c.dataset.localHidden !== "1"), state.activeTag);
+    return; }
+  if (t.closest(".info")){ openPanel(t.closest(".card")); return; }
+
   /* ---- clicking a page ---- */
   const thumb = t.closest(".thumb");
   if (thumb){
-    const card = thumb.closest(".card");
+    const card = thumb.closest(".card"), uid = card.dataset.uid;
     if (state.mode === "deck"){
-      const uid = card.dataset.uid, at = state.deck.indexOf(uid);
+      const at = state.deck.indexOf(uid);
       at === -1 ? state.deck.push(uid) : state.deck.splice(at, 1);
       renumberDeck(); renderBar();
-    } else if (state.brushing && state.brush){
-      applyTag(card, state.brush, !tagsOf(card).includes(state.brush));
-      refresh();
+    } else if (state.mode === "tag" && state.activeTag){
+      if (e.shiftKey && state.lastClicked && state.lastClicked !== uid){
+        applyToCards(rangeBetween(state.lastClicked, uid), state.activeTag);
+      } else {
+        applyTag(card, state.activeTag, !tagsOf(card).includes(state.activeTag));
+        refresh();
+      }
+      state.lastClicked = uid;
     } else {
-      openPanel(card);          // the default: open the page and tag it
+      openPanel(card);   // no tag chosen, or reviewing duplicates: read the page
     }
     return;
   }
 
   if (t.closest("#handle")){ document.body.classList.toggle("drawer-open"); return; }
-  if (t.closest("#brushtoggle")){
-    state.brushing = !state.brushing;
-    document.body.classList.toggle("brushing", state.brushing);
-    $("#brushtoggle").setAttribute("aria-pressed", String(state.brushing));
-    if (!state.brushing) setBrush(null);
-    if (state.brushing && !document.body.classList.contains("drawer-open"))
-      document.body.classList.add("drawer-open");
-    refresh(); return; }
-  if (t.closest("#brushoff")){
-    state.brushing = false; document.body.classList.remove("brushing");
-    $("#brushtoggle").setAttribute("aria-pressed", "false"); setBrush(null); return; }
+  if (t.closest("#brushoff")){ setActiveTag(null); return; }
   const modeBtn = t.closest(".mode"); if (modeBtn){ setMode(modeBtn.dataset.mode); return; }
   const viewBtn = t.closest("[data-view]");
   if (viewBtn){ state.view = viewBtn.dataset.view;
@@ -577,7 +664,6 @@ document.addEventListener("click", e => {
   if (t.closest("#cleardeck")){ state.deck = []; renumberDeck(); renderBar(); return; }
   if (t.closest("#clear")){
     state.q = ""; $("#q").value = ""; state.view = "all"; state.filters.clear();
-    $$("#dir .tag").forEach(l => l.dataset.localFilter = "0");
     $$("[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === "all")));
     refresh(); return; }
   if (t.closest("#copycmd")){
@@ -598,12 +684,12 @@ document.addEventListener("input", e => {
   const span = e.target.closest?.(".tname"); if (!span) return;
   const id = span.closest(".tag").dataset.tag, name = span.textContent.trim();
   $$(`#grid .tg[data-tag="${id}"] .n`).forEach(n => { n.textContent = name; });
-  if (state.brush === id) $("#brushname").textContent = name;
+  if (state.activeTag === id) $("#brushname").textContent = name;
 });
 document.addEventListener("keydown", e => {
   if (e.key === "/" && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)
       && !document.activeElement.isContentEditable){ e.preventDefault(); $("#q").focus(); }
-  if (e.key === "Escape"){ if (state.panel) closePanel(); else if (state.brush) setBrush(null); }
+  if (e.key === "Escape"){ if (state.panel) closePanel(); else if (state.activeTag) setActiveTag(null); }
   if (state.panel && (e.key === "ArrowRight" || e.key === "ArrowLeft")
       && !document.activeElement.isContentEditable){
     e.preventDefault(); stepPanel(e.key === "ArrowRight" ? 1 : -1); }

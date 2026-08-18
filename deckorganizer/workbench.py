@@ -42,10 +42,8 @@ def _directory_html(categories: list[dict]) -> str:
         # tags with that builder, and a mismatch would leave half the directory
         # missing its controls.
         tags = "".join(
-            '<li class="tag" data-tag="{id}" data-local-filter="0" data-local-brush="0">'
-            '<button class="brush" data-act="brush" title="选为当前标签">✎</button>'
+            '<li class="tag" data-tag="{id}">'
             '<span class="tname" contenteditable="true" spellcheck="false">{name}</span>'
-            '<button class="mini" data-act="filter" title="按此标签筛选">◎</button>'
             '<button class="mini del" data-act="deltag" title="删除标签">×</button>'
             "</li>".format(id=html.escape(t["id"]), name=html.escape(t["name"]))
             for t in cat["tags"]
@@ -103,6 +101,7 @@ def _cards_html(pages: list[dict], tag_names: dict, width: int,
             ' data-dup="{dup}" data-dup-order="{order}"'
             ' data-local-hidden="0" data-local-has="0" data-local-deck="">'
             '<div class="thumb">{thumb}<span class="uid">{uid}</span>'
+            '<button class="info" title="打开详情">i</button>'
             '<span class="flag title">标题待确认</span>'
             '<span class="flag titleok">标题已确认</span>'
             '<span class="flag dup">相似页</span>'
